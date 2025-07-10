@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Software Architecture View: Zero-Cost Dark Pool DEX</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdn.tailwindcss.com?plugins=typography"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-gray-900 text-gray-300 font-sans antialiased">
+
+    <header id="main-header" class="fixed top-0 left-0 right-0 z-50 transition-all duration-300">
+        <div class="container mx-auto px-6 py-4 flex justify-between items-center">
+            <div class="flex items-center space-x-3">
+                <i data-lucide="shield-check" class="text-cyan-400 w-8 h-8"></i>
+                <span class="text-xl font-bold text-white">Dark Pool DEX Architecture</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-6 pt-24 md:pt-32 pb-16">
+
+        <section id="hero" class="text-center mb-24 anim-fade-in">
+            <h1 class="text-4xl md:text-6xl font-extrabold text-white leading-tight mb-4">
+                Software Architecture View
+            </h1>
+            <p class="text-2xl md:text-3xl font-light text-cyan-400">
+                A Zero-Cost Dark Pool DEX on Constellation DAG
+            </p>
+        </section>
+
+        <div class="space-y-24">
+
+            <section class="anim-fade-in-up">
+                <h2 class="section-title"><span>1</span>Introduction & Core Problem</h2>
+                <div class="prose prose-custom max-w-none">
+                    <p>A "dark pool" is a private trading venue where financial instruments are traded anonymously, with the order book hidden from the public. This confidentiality prevents front-running and minimizes the market impact of large orders. However, building such a system in a decentralized, trustless, and cost-free manner presents a significant challenge.</p>
+                    <p>This document outlines the software architecture for a novel Dark Pool DEX designed to operate with zero setup and operational costs for the developer. The project's objective is to create an accessible, private, and efficient trading system by leveraging the unique capabilities of Constellation's Hypergraph, a custom privacy layer, and free-tier cloud infrastructure.</p>
+                </div>
+            </section>
+
+            <section class="anim-fade-in-up">
+                <h2 class="section-title"><span>2</span>Technology Foundation: Why Constellation DAG?</h2>
+                <div class="prose prose-custom max-w-none mb-8">
+                    <p>The choice of underlying ledger technology is critical. After a comparative analysis between zk-Rollups and Constellation's DAG, Constellation was selected as the optimal foundation. While zk-Rollups offer superior native privacy, they incur prohibitive deployment and operational costs. Constellation's model, though requiring significant engineering effort to create a custom privacy layer, provides a viable path to a zero-cost setup.</p>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr>
+                                <th class="table-header">Metric</th>
+                                <th class="table-header">zk-Rollups</th>
+                                <th class="table-header">Constellation DAG</th>
+                                <th class="table-header">Verdict & Rationale</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td class="table-cell font-semibold text-white">Developer Setup Cost</td>
+                                <td class="table-cell">High (L1 gas fees, prover node infra)</td>
+                                <td class="table-cell text-green-400">Low to Zero (Fee model, grants)</td>
+                                <td class="table-cell"><span class="font-bold text-cyan-400">Winner: Constellation.</span> Directly addresses the zero-cost mandate.</td>
+                            </tr>
+                            <tr>
+                                <td class="table-cell font-semibold text-white">Privacy & Order Hiding</td>
+                                <td class="table-cell text-green-400">Native & Strong (ZKPs)</td>
+                                <td class="table-cell">Not Native (Requires custom build)</td>
+                                <td class="table-cell"><span class="font-bold">Winner: zk-Rollups.</span> Technologically superior but fails cost constraint.</td>
+                            </tr>
+                             <tr>
+                                <td class="table-cell font-semibold text-white">Scalability & Fees</td>
+                                <td class="table-cell">High Scalability, Low User Fees</td>
+                                <td class="table-cell text-green-400">High Scalability, Zero User Fees</td>
+                                <td class="table-cell"><span class="font-bold text-cyan-400">Winner: Draw.</span> Both are highly scalable for a DEX environment.</td>
+                            </tr>
+                            <tr>
+                                <td class="table-cell font-semibold text-white">Ecosystem & Tooling</td>
+                                <td class="table-cell text-green-400">Mature & Robust (EVM)</td>
+                                <td class="table-cell">Nascent & Evolving</td>
+                                <td class="table-cell"><span class="font-bold">Winner: zk-Rollups.</span> Faster development path due to mature tooling.</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <section class="anim-fade-in-up">
+                <h2 class="section-title"><span>3</span>High-Level System Architecture</h2>
+                <div class="prose prose-custom max-w-none mb-8">
+                    <p>The architecture segregates responsibilities into three core components to achieve lean off-chain coordination and secure on-chain settlement. This design minimizes the on-chain footprint, which is key to leveraging Constellation's free usage potential.</p>
+                     <ul class="list-disc pl-5 space-y-2">
+                        <li><strong>Frontend Interface:</strong> A static web app where users interact and perform all client-side cryptographic operations, ensuring private keys never leave their browser.</li>
+                        <li><strong>Off-Chain Matching Engine:</strong> A lightweight, centralized coordination layer that runs on free-tier cloud infrastructure. It receives encrypted orders, maintains a private order book, and facilitates trade settlement without ever taking custody of user funds.</li>
+                        <li><strong>On-Chain Settlement Layer:</strong> A custom Metagraph on the Constellation Hypergraph that acts as the decentralized trust anchor. It manages collateral via state channels and atomically settles trades only upon receiving valid signatures from both parties.</li>
+                    </ul>
+                </div>
+                <div class="diagram-container">
+                    <img src="https://r2.flowith.net/files/o/1752109455686-dark_pool_dex_architecture_diagram_index_0@1024x1024.png" alt="High-Level System Architecture Diagram" class="diagram-image">
+                    <p class="diagram-caption">Fig. 1: The three core components interact to separate concerns: user interaction (Frontend), order matching (Off-Chain Engine), and final settlement (On-Chain Metagraph).</p>
+                </div>
+            </section>
+
+            <section class="anim-fade-in-up">
+                <h2 class="section-title"><span>4</span>Deep Dive: The Custom Privacy Layer</h2>
+                <div class="prose prose-custom max-w-none mb-8">
+                    <p>Since DAG protocols are not inherently private, a custom privacy layer is the most critical architectural component. We employ a two-stage cryptographic protocol, the **Commit-Reveal scheme**, to ensure order confidentiality from both the public and the matching engine operator until the moment of execution.</p>
+                     <ol class="list-decimal pl-5 space-y-2">
+                        <li><strong>Commitment Phase:</strong> The user generates a cryptographic hash (commitment) of their order details plus a secret nonce. Only this commitment is sent to the engine, preventing the operator from knowing the order's specifics.</li>
+                        <li><strong>Reveal Phase:</strong> After the commitment is logged, the user encrypts the full order details using the engine's public key (via ECIES) and sends the encrypted payload.</li>
+                        <li><strong>Verification:</strong> The engine decrypts the payload and verifies that its hash matches the original commitment. This ensures the user cannot change their order after commitment, securing the integrity of the matching process.</li>
+                    </ol>
+                </div>
+                <div class="diagram-container">
+                    <img src="https://r2.flowith.net/files/o/1752109485548-commit_reveal_scheme_data_flow_index_1@1024x1024.png" alt="Commit-Reveal Scheme Data Flow Diagram" class="diagram-image">
+                    <p class="diagram-caption">Fig. 2: Data flow of the Commit-Reveal scheme, protecting order details from premature exposure to the engine and the public.</p>
+                </div>
+            </section>
+
+            <section class="anim-fade-in-up">
+                <h2 class="section-title"><span>5</span>Quantitative & Programmatic Trading Integration</h2>
+                <div class="prose prose-custom max-w-none mb-8">
+                     <p>To cater to sophisticated traders, the architecture includes direct integration for quantitative strategies and programmatic trading. This is achieved through two key components:</p>
+                    <ul class="list-disc pl-5 space-y-2">
+                        <li><strong>Federated Oracle Model:</strong> To bypass the lack of native, low-cost oracles, the off-chain engine acts as an aggregator. It ingests price data from multiple free, reputable public APIs (e.g., Binance, CoinGecko) and uses a medianizer to produce a single, reliable internal price feed.</li>
+                        <li><strong>Secure Trading API:</strong> Programmatic traders are provided a RESTful API for order submission and management. All requests must be cryptographically signed using an HMAC-SHA256 signature, ensuring authentication, integrity, and non-repudiation. The API endpoints are designed to seamlessly follow the Commit-Reveal privacy protocol.</li>
+                    </ul>
+                </div>
+                <div class="diagram-container">
+                    <img src="https://r2.flowith.net/files/o/1752109452749-quant_api_integration_architecture_index_2@1024x1024.png" alt="Quant API Integration Architecture Diagram" class="diagram-image">
+                    <p class="diagram-caption">Fig. 3: Architecture for integrating external data feeds and providing a secure API for programmatic traders.</p>
+                </div>
+            </section>
+            
+            <section class="anim-fade-in-up">
+                <h2 class="section-title"><span>6</span>Security Architecture & Risk Mitigation</h2>
+                 <div class="prose prose-custom max-w-none mb-8">
+                    <p>The security model assumes the off-chain engine is untrusted. Guarantees are derived from client-side cryptography and the on-chain Metagraph. Key risks and their mitigation strategies are summarized below.</p>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="card">
+                        <h4 class="card-title">Engine-Trader Collusion</h4>
+                        <p class="card-text">The engine operator leaks order info to a favored trader. <br/><strong class="text-cyan-400">Mitigation:</strong> Implement batched matching epochs (e.g., 1-second intervals). All orders in an epoch are matched simultaneously, negating the value of microsecond-level information leakage.</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="card-title">Stale State Submission</h4>
+                        <p class="card-text">A malicious actor replays an old, signed transaction on-chain. <br/><strong class="text-cyan-400">Mitigation:</strong> Use a sequential, monotonically increasing nonce in the on-chain contract for each user's channel state. The contract will reject any transaction with an outdated nonce.</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="card-title">Engine Private Key Compromise</h4>
+                        <p class="card-text">An attacker gains access to the engine's ECIES key, nullifying privacy. <br/><strong class="text-cyan-400">Mitigation:</strong> Store the key in a secure vault (e.g., AWS Secrets Manager) and implement an automated key rotation policy (e.g., every 24-48 hours) to limit the impact of a breach.</p>
+                    </div>
+                    <div class="card">
+                        <h4 class="card-title">Engine Censorship / Downtime</h4>
+                        <p class="card-text">The off-chain engine goes offline, freezing user funds in state channels. <br/><strong class="text-cyan-400">Mitigation:</strong> The on-chain contract includes a user-sovereign emergency withdrawal function with a time-lock, providing a trustless escape hatch.</p>
+                    </div>
+                </div>
+            </section>
+            
+            <section class="anim-fade-in-up">
+                <h2 class="section-title"><span>7</span>The Zero-Cost Deployment Roadmap</h2>
+                <div class="prose prose-custom max-w-none mb-8">
+                    <p>The entire system can be deployed without any upfront capital expenditure by leveraging free-tier cloud services and the Constellation public testnet. This practical roadmap makes the architecture accessible to any developer.</p>
+                     <ul class="list-disc pl-5 space-y-2">
+                        <li><strong>Frontend:</strong> Deployed as a static site on services like <strong class="text-white">Vercel or Netlify</strong>, which offer generous free tiers with global CDN distribution.</li>
+                        <li><strong>Off-Chain Engine:</strong> Deployed on PaaS providers like <strong class="text-white">Heroku (Free Dyno) or Render (Free Instance)</strong>, which are sufficient for the lightweight coordination logic.</li>
+                        <li><strong>On-Chain Logic:</strong> The Metagraph smart contract is deployed on the <strong class="text-white">Constellation Public Testnet</strong>. Testnet `$DAG` for transaction fees can be acquired for free via a public faucet.</li>
+                    </ul>
+                </div>
+                <div class="diagram-container">
+                    <img src="https://r2.flowith.net/files/o/1752109454666-zero_cost_deployment_model_diagram_index_3@1024x1024.png" alt="Zero-Cost Deployment Model Diagram" class="diagram-image">
+                    <p class="diagram-caption">Fig. 4: A visual representation of the zero-cost deployment strategy using free-tier public cloud services and the Constellation Testnet.</p>
+                </div>
+            </section>
+
+            <section class="anim-fade-in-up">
+                <h2 class="section-title"><span>8</span>Conclusion</h2>
+                <div class="prose prose-custom max-w-none">
+                    <p>The proposed architecture for a zero-cost Dark Pool DEX on Constellation DAG presents a powerful model for building decentralized financial tools that are both private and accessible. By strategically separating on-chain and off-chain responsibilities, implementing a robust custom privacy layer, and leveraging free-tier cloud infrastructure, this system overcomes the significant financial barriers that typically hinder innovation in the space.</p>
+                    <p>It demonstrates that with thoughtful engineering, it is possible to create a secure, high-performance, and private trading venue without requiring substantial upfront capital, democratizing access to sophisticated financial technology for developers and users alike.</p>
+                </div>
+            </section>
+        </div>
+
+    </main>
+
+    <footer class="text-center py-8 border-t border-gray-800/50 mt-16">
+        <p class="text-gray-500">Architectural View &copy; 2025. All Rights Reserved.</p>
+    </footer>
+
+    <button id="scroll-to-top" class="fixed bottom-6 right-6 bg-cyan-500/80 backdrop-blur-sm text-white p-3 rounded-full shadow-lg hover:bg-cyan-500 transition-all duration-300 opacity-0 translate-y-4">
+        <i data-lucide="arrow-up" class="w-6 h-6"></i>
+    </button>
+
+    <script type="module" src="script.js"></script>
+</body>
+</html>
