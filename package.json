@@ -1,57 +1,82 @@
 {
   "name": "dark-pool-dex",
-  "version": "0.1.0",
-  "private": true,
+  "version": "1.0.0",
+  "description": "Zero-cost, privacy-preserving dark pool DEX with cross-chain swap capabilities",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "test:coverage": "hardhat coverage",
+    "deploy:local": "hardhat run scripts/deploy-optimized.js --network localhost",
+    "deploy:simple": "hardhat run scripts/simple-deploy.js --network polygon-mumbai",
+    "deploy:polygon": "hardhat run scripts/deploy-optimized.js --network polygon-mumbai",
+    "deploy:arbitrum": "hardhat run scripts/deploy-optimized.js --network arbitrum-sepolia",
+    "deploy:optimism": "hardhat run scripts/deploy-optimized.js --network optimism-sepolia",
+    "deploy:all": "npm run deploy:polygon && npm run deploy:arbitrum && npm run deploy:optimism",
+    "deploy:constellation": "node scripts/deploy-constellation.js",
+    "verify:polygon": "hardhat verify --network polygon-mumbai",
+    "verify:arbitrum": "hardhat verify --network arbitrum-sepolia",
+    "verify:optimism": "hardhat verify --network optimism-sepolia",
+    "security:analysis": "node scripts/security-analysis.js",
+    "security:slither": "slither .",
+    "security:coverage": "npm run test:coverage && npm run security:analysis",
+    "start:monitoring": "node scripts/start-monitoring.js",
+    "start:matching-engine": "cd backend && npm start",
+    "dev:matching-engine": "cd backend && npm run dev",
+    "bridge:test": "node scripts/test-bridge-apis.js",
+    "cost:analyze": "node scripts/analyze-costs.js",
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
   "dependencies": {
-    "@testing-library/jest-dom": "^5.16.4",
-    "@testing-library/react": "^13.3.0",
-    "@testing-library/user-event": "^13.5.0",
-    "@types/jest": "^27.5.2",
-    "@types/node": "^16.11.56",
-    "@types/react": "^18.0.17",
-    "@types/react-dom": "^18.0.6",
-    "react": "^18.2.0",
-    "react-dom": "^18.2.0",
-    "react-scripts": "5.0.1",
-    "typescript": "^4.9.5",
-    "web-vitals": "^2.1.4"
+    "@openzeppelin/contracts": "^4.9.3",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10.4.16",
+    "axios": "^1.5.0",
+    "ethers": "^6.14.0",
+    "hardhat": "^2.17.0",
+    "next": "13.5.4",
+    "postcss": "^8.4.31",
+    "react": "^18",
+    "react-dom": "^18",
+    "tailwindcss": "^3.3.0",
+    "typescript": "^5"
   },
   "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^3.0.0",
-    "@openzeppelin/contracts": "^4.8.0",
+    "@nomiclabs/hardhat-etherscan": "^3.1.7",
+    "@types/chai": "^4.3.5",
+    "@types/mocha": "^10.0.1",
     "chai": "^4.3.7",
-    "ethers": "^6.15.0",
-    "hardhat": "^2.12.0",
+    "dotenv": "^17.2.0",
+    "eslint": "^8",
+    "eslint-config-next": "13.5.4",
+    "ethereum-waffle": "^4.0.10",
     "hardhat-gas-reporter": "^1.0.9",
-    "solidity-coverage": "^0.8.0"
+    "solidity-coverage": "^0.8.2"
   },
-  "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
-    "eject": "react-scripts eject",
-    "compile": "hardhat compile",
-    "test:contracts": "hardhat test",
-    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
-    "deploy:testnet": "hardhat run scripts/deploy.js --network testnet",
-    "node": "hardhat node"
+  "keywords": [
+    "dark-pool",
+    "dex",
+    "privacy",
+    "cross-chain",
+    "batching",
+    "optimization",
+    "constellation",
+    "dag"
+  ],
+  "author": "Dark Pool DEX Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/dark-pool-dex.git"
   },
-  "eslintConfig": {
-    "extends": [
-      "react-app",
-      "react-app/jest"
-    ]
-  },
-  "browserslist": {
-    "production": [
-      ">0.2%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 1 chrome version",
-      "last 1 firefox version",
-      "last 1 safari version"
-    ]
+  "engines": {
+    "node": ">=16.0.0",
+    "npm": ">=8.0.0"
   }
 }
