@@ -4,6 +4,7 @@ import './WalletButton.css';
 interface WalletButtonProps {
   onConnect?: (account: string, provider: string) => void;
   onDisconnect?: () => void;
+  onContractDeploy?: (address: string) => void;
 }
 
 declare global {
@@ -12,12 +13,15 @@ declare global {
   }
 }
 
-const WalletButton: React.FC<WalletButtonProps> = ({ onConnect, onDisconnect }) => {
+const WalletButton: React.FC<WalletButtonProps> = ({ onConnect, onDisconnect, onContractDeploy }) => {
   const [isConnected, setIsConnected] = useState(false);
   const [isConnecting, setIsConnecting] = useState(false);
   const [account, setAccount] = useState<string>('');
   const [provider, setProvider] = useState<string>('');
   const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const [showWalletModal, setShowWalletModal] = useState(false);
+  const [selectedProvider, setSelectedProvider] = useState<any>(null);
+  const [selectedWalletName, setSelectedWalletName] = useState<string>('');
 
   useEffect(() => {
     // Check if already connected
@@ -162,17 +166,61 @@ const WalletButton: React.FC<WalletButtonProps> = ({ onConnect, onDisconnect }) 
     }
   };
 
+  const getInjectedWallets = () => {
+    const wallets = [];
+    if (window.ethereum && window.ethereum.isMetaMask) {
+      wallets.push({ name: 'MetaMask', provider: window.ethereum });
+    }
+    if (window.ethereum && window.ethereum.isPhantom) {
+      wallets.push({ name: 'Phantom', provider: window.ethereum });
+    }
+    // Add more wallets here if needed
+    return wallets;
+  };
+
   const handleConnect = async () => {
-    if (window.ethereum) {
-      await connectMetaMask();
-    } else {
-      // If MetaMask is not available, show options
-      const choice = window.confirm(
-        'MetaMask is not installed. Would you like to try WalletConnect instead?'
-      );
-      if (choice) {
-        await connectWalletConnect();
+    const wallets = getInjectedWallets();
+    if (wallets.length === 0) {
+      alert('No supported wallet found. Please install MetaMask or Phantom.');
+      return;
+    }
+    if (wallets.length === 1) {
+      setSelectedProvider(wallets[0].provider);
+      setSelectedWalletName(wallets[0].name);
+      await connectWithProvider(wallets[0].provider, wallets[0].name);
+      return;
+    }
+    // Multiple wallets: show modal
+    setShowWalletModal(true);
+  };
+
+  const connectWithProvider = async (provider: any, walletName: string) => {
+    setIsConnecting(true);
+    startConnectionTimeout();
+    try {
+      const accounts = await provider.request({ method: 'eth_requestAccounts' });
+      clearConnectionTimeout();
+      if (accounts.length > 0) {
+        setAccount(accounts[0]);
+        setIsConnected(true);
+        setProvider(walletName.toLowerCase());
+        setSelectedProvider(provider);
+        setSelectedWalletName(walletName);
+        if (onConnect) {
+          onConnect(accounts[0], walletName.toLowerCase());
+        }
       }
+      setShowWalletModal(false);
+    } catch (error: any) {
+      clearConnectionTimeout();
+      if (error.code === 4001) {
+        alert('Please connect to ' + walletName + ' to use this feature.');
+      } else {
+        console.error('Error connecting to ' + walletName + ':', error);
+        alert('Failed to connect to ' + walletName + '. Please try again.');
+      }
+      setIsConnecting(false);
+      setShowWalletModal(false);
     }
   };
 
@@ -183,7 +231,7 @@ const WalletButton: React.FC<WalletButtonProps> = ({ onConnect, onDisconnect }) 
   if (isConnected) {
     return (
       <div className="wallet-button-container">
-        <button className="wallet-button connected" onClick={handleDisconnect}>
+        <button className="wallet-button connected" style={{marginRight: '0.5rem'}} onClick={undefined} disabled>
           <div className="wallet-icon">
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
               <path
@@ -203,6 +251,9 @@ const WalletButton: React.FC<WalletButtonProps> = ({ onConnect, onDisconnect }) 
           <span className="wallet-text">
             {formatAddress(account)}
           </span>
+        </button>
+        <button className="wallet-button wallet-button-disconnect" onClick={handleDisconnect}>
+          Disconnect
         </button>
       </div>
     );
@@ -244,6 +295,35 @@ const WalletButton: React.FC<WalletButtonProps> = ({ onConnect, onDisconnect }) 
           {isConnecting ? 'Connecting...' : 'Connect Wallet'}
         </span>
       </button>
+      {showWalletModal && (
+        <div style={{
+          position: 'fixed', top: 0, left: 0, width: '100vw', height: '100vh',
+          background: 'rgba(0,0,0,0.4)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000
+        }}>
+          <div style={{ background: '#222', padding: 32, borderRadius: 16, minWidth: 280, boxShadow: '0 4px 24px #0008', color: '#fff' }}>
+            <h3 style={{marginBottom: 16}}>Select Wallet</h3>
+            {getInjectedWallets().map(w => (
+              <button
+                key={w.name}
+                style={{
+                  display: 'block', width: '100%', margin: '8px 0', padding: '12px', borderRadius: 8,
+                  background: '#333', color: '#fff', border: '1px solid #444', fontSize: 16, cursor: 'pointer',
+                  transition: 'background 0.2s',
+                }}
+                onClick={() => connectWithProvider(w.provider, w.name)}
+              >
+                {w.name}
+              </button>
+            ))}
+            <button
+              style={{ marginTop: 16, background: 'none', color: '#aaa', border: 'none', cursor: 'pointer', fontSize: 14 }}
+              onClick={() => setShowWalletModal(false)}
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

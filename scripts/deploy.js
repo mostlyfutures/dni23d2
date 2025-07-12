@@ -6,20 +6,20 @@ async function main() {
   // Get the deployer account
   const [deployer] = await ethers.getSigners();
   console.log("📝 Deploying contracts with account:", deployer.address);
-  console.log("💰 Account balance:", (await deployer.getBalance()).toString());
+  console.log("💰 Account balance:", (await deployer.provider.getBalance(deployer.address)).toString());
 
   // Deployment parameters
   const DARK_POOL_PARAMS = {
-    minOrderSize: ethers.utils.parseEther("0.001"), // 0.001 ETH minimum
-    maxOrderSize: ethers.utils.parseEther("100"),   // 100 ETH maximum
+    minOrderSize: ethers.parseEther("0.001"), // 0.001 ETH minimum
+    maxOrderSize: ethers.parseEther("100"),   // 100 ETH maximum
     commitmentWindow: 300,  // 5 minutes
     revealWindow: 600,      // 10 minutes
     tradingFee: 50          // 0.5% (50 basis points)
   };
 
   const ATOMIC_SWAP_PARAMS = {
-    minSwapAmount: ethers.utils.parseEther("0.001"), // 0.001 ETH minimum
-    maxSwapAmount: ethers.utils.parseEther("50"),    // 50 ETH maximum
+    minSwapAmount: ethers.parseEther("0.001"), // 0.001 ETH minimum
+    maxSwapAmount: ethers.parseEther("50"),    // 50 ETH maximum
     defaultExpiry: 3600,    // 1 hour
     swapFee: 30             // 0.3% (30 basis points)
   };
@@ -35,8 +35,9 @@ async function main() {
       DARK_POOL_PARAMS.revealWindow,
       DARK_POOL_PARAMS.tradingFee
     );
-    await darkPoolDEX.deployed();
-    console.log("✅ DarkPoolDEX deployed to:", darkPoolDEX.address);
+    await darkPoolDEX.waitForDeployment();
+    const darkPoolDEXAddress = await darkPoolDEX.getAddress();
+    console.log("✅ DarkPoolDEX deployed to:", darkPoolDEXAddress);
 
     // Deploy AtomicSwap contract
     console.log("\n📋 Deploying AtomicSwap contract...");
@@ -47,8 +48,9 @@ async function main() {
       ATOMIC_SWAP_PARAMS.defaultExpiry,
       ATOMIC_SWAP_PARAMS.swapFee
     );
-    await atomicSwap.deployed();
-    console.log("✅ AtomicSwap deployed to:", atomicSwap.address);
+    await atomicSwap.waitForDeployment();
+    const atomicSwapAddress = await atomicSwap.getAddress();
+    console.log("✅ AtomicSwap deployed to:", atomicSwapAddress);
 
     // Verify deployment
     console.log("\n🔍 Verifying deployment...");
@@ -68,37 +70,57 @@ async function main() {
     // Log contract parameters
     console.log("\n📊 Contract Parameters:");
     console.log("DarkPoolDEX:");
-    console.log("  - Min Order Size:", ethers.utils.formatEther(DARK_POOL_PARAMS.minOrderSize), "ETH");
-    console.log("  - Max Order Size:", ethers.utils.formatEther(DARK_POOL_PARAMS.maxOrderSize), "ETH");
+    console.log("  - Min Order Size:", ethers.formatEther(DARK_POOL_PARAMS.minOrderSize), "ETH");
+    console.log("  - Max Order Size:", ethers.formatEther(DARK_POOL_PARAMS.maxOrderSize), "ETH");
     console.log("  - Commitment Window:", DARK_POOL_PARAMS.commitmentWindow, "seconds");
     console.log("  - Reveal Window:", DARK_POOL_PARAMS.revealWindow, "seconds");
     console.log("  - Trading Fee:", DARK_POOL_PARAMS.tradingFee / 100, "%");
     
     console.log("\nAtomicSwap:");
-    console.log("  - Min Swap Amount:", ethers.utils.formatEther(ATOMIC_SWAP_PARAMS.minSwapAmount), "ETH");
-    console.log("  - Max Swap Amount:", ethers.utils.formatEther(ATOMIC_SWAP_PARAMS.maxSwapAmount), "ETH");
+    console.log("  - Min Swap Amount:", ethers.formatEther(ATOMIC_SWAP_PARAMS.minSwapAmount), "ETH");
+    console.log("  - Max Swap Amount:", ethers.formatEther(ATOMIC_SWAP_PARAMS.maxSwapAmount), "ETH");
     console.log("  - Default Expiry:", ATOMIC_SWAP_PARAMS.defaultExpiry, "seconds");
     console.log("  - Swap Fee:", ATOMIC_SWAP_PARAMS.swapFee / 100, "%");
 
-    // Save deployment info
+    // Convert BigInt values in parameters to strings for JSON serialization
+    function stringifyBigInts(obj) {
+      if (typeof obj === 'bigint') {
+        return obj.toString();
+      } else if (Array.isArray(obj)) {
+        return obj.map(stringifyBigInts);
+      } else if (typeof obj === 'object' && obj !== null) {
+        const res = {};
+        for (const key in obj) {
+          res[key] = stringifyBigInts(obj[key]);
+        }
+        return res;
+      }
+      return obj;
+    }
+
     const deploymentInfo = {
-      network: network.name,
+      network: "localhost",
       deployer: deployer.address,
       contracts: {
         DarkPoolDEX: {
-          address: darkPoolDEX.address,
-          parameters: DARK_POOL_PARAMS
+          address: darkPoolDEXAddress,
+          parameters: stringifyBigInts(DARK_POOL_PARAMS)
         },
         AtomicSwap: {
-          address: atomicSwap.address,
-          parameters: ATOMIC_SWAP_PARAMS
+          address: atomicSwapAddress,
+          parameters: stringifyBigInts(ATOMIC_SWAP_PARAMS)
         }
       },
       timestamp: new Date().toISOString()
     };
 
-    console.log("\n📄 Deployment Summary:");
-    console.log(JSON.stringify(deploymentInfo, null, 2));
+    // Save to public folder for frontend access
+    const fs = require('fs');
+    const path = require('path');
+    const publicDeploymentPath = path.join(__dirname, '..', 'public', 'deployment.json');
+    fs.writeFileSync(publicDeploymentPath, JSON.stringify(deploymentInfo, null, 2));
+    
+    console.log("📄 Deployment info saved to public/deployment.json");
 
     console.log("\n🎉 Deployment completed successfully!");
     console.log("\nNext steps:");
@@ -117,4 +139,4 @@ main()
   .catch((error) => {
     console.error(error);
     process.exit(1);
-  }); 
+  });

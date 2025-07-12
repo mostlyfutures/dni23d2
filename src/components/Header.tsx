@@ -6,9 +6,10 @@ import WalletButton from './WalletButton';
 interface HeaderProps {
   onConnect?: (account: string, provider: string) => void;
   onDisconnect?: () => void;
+  onContractDeploy?: (address: string) => void;
 }
 
-const Header: React.FC<HeaderProps> = ({ onConnect, onDisconnect }) => {
+const Header: React.FC<HeaderProps> = ({ onConnect, onDisconnect, onContractDeploy }) => {
   return (
     <header className="header">
       <div className="header-content">
@@ -16,6 +17,7 @@ const Header: React.FC<HeaderProps> = ({ onConnect, onDisconnect }) => {
         <WalletButton 
           onConnect={onConnect}
           onDisconnect={onDisconnect}
+          onContractDeploy={onContractDeploy}
         />
       </div>
     </header>

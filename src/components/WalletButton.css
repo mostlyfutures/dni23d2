@@ -61,6 +61,19 @@
   box-shadow: 0 4px 12px rgba(101, 163, 13, 0.3);
 }
 
+.wallet-button-disconnect {
+  background: #dc2626;
+  border-color: #b91c1c;
+  color: #fff;
+  margin-left: 0.25rem;
+  transition: background 0.2s, border-color 0.2s;
+}
+.wallet-button-disconnect:hover {
+  background: #b91c1c;
+  border-color: #7f1d1d;
+  color: #fff;
+}
+
 .wallet-icon {
   display: flex;
   align-items: center;

@@ -1,0 +1,20 @@
+{
+  "network": "localhost",
+  "chainId": "1337",
+  "contracts": {
+    "DarkPoolDEX": "0x610178dA211FEF7D417bC0e6FeD39F05609AD788",
+    "AtomicSwap": "0xB7f8BC63BbcaD18155201308C8f3540b07f84F5e"
+  },
+  "parameters": {
+    "minOrderSize": "0.001",
+    "maxOrderSize": "100.0",
+    "commitmentWindow": "300",
+    "revealWindow": "600",
+    "tradingFee": "50",
+    "minSwapAmount": "0.001",
+    "maxSwapAmount": "100.0",
+    "defaultExpiry": "3600",
+    "swapFee": "25"
+  },
+  "deployedAt": "2025-07-10T02:50:28.169Z"
+}
