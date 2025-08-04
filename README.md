@@ -1,13 +1,13 @@
-# Dark Pool DEX Frontend
+# xx xxxx xxx Frontend
 
-A modern, privacy-focused decentralized exchange frontend built with React and TypeScript. This project implements the zero-cost dark pool DEX architecture using Constellation DAG for private, encrypted trading.
+A modern, privacy-focused decentralized exchange frontend built with React and TypeScript. This project implements the zero-cost xxx xxx xxx architecture using xxxx xxx for private, encrypted trading.
 
 ## 🏗️ Architecture
 
-This frontend is designed to work with the zero-cost dark pool DEX architecture that includes:
+This frontend is designed to work with the zero-cost xxx xxx xxx architecture that includes:
 
 - **Frontend**: React/TypeScript static app (deployable to Vercel/Netlify/IPFS)
-- **Smart Contracts**: Dark Pool DEX on Constellation DAG
+- **Smart Contracts**: xxx xxx xxx on xxx xxx
 - **Privacy Layer**: Commit-Reveal scheme for encrypted orders
 - **Order Storage**: IPFS/Arweave for decentralized order blobs
 - **Zero Cost**: Free hosting and deployment
@@ -100,7 +100,7 @@ Create a `.env` file in the root directory:
 
 ```env
 REACT_APP_CONSTELLATION_RPC_URL=your_constellation_rpc_url
-REACT_APP_CONTRACT_ADDRESS=your_dark_pool_contract_address
+REACT_APP_CONTRACT_ADDRESS=your_xxxx_contract_address
 REACT_APP_IPFS_GATEWAY=your_ipfs_gateway
 ```
 
@@ -194,6 +194,6 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 ## 🙏 Acknowledgments
 
-- Constellation DAG team for the underlying technology
+- xxxx xxx team for the underlying technology
 - Islamic geometric art for design inspiration
 - React and TypeScript communities for excellent tooling 
