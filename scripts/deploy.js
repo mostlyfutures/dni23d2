@@ -54,18 +54,16 @@ async function main() {
 
     // Verify deployment
     console.log("\n🔍 Verifying deployment...");
-    
-    const darkPoolOwner = await darkPoolDEX.owner();
-    const atomicSwapOwner = await atomicSwap.owner();
-    
-    console.log("DarkPoolDEX owner:", darkPoolOwner);
-    console.log("AtomicSwap owner:", atomicSwapOwner);
-    
-    if (darkPoolOwner === deployer.address && atomicSwapOwner === deployer.address) {
-      console.log("✅ Ownership verification passed");
-    } else {
-      console.log("❌ Ownership verification failed");
-    }
+    // Ownership verification removed because contracts do not implement owner()
+    // const darkPoolOwner = await darkPoolDEX.owner();
+    // const atomicSwapOwner = await atomicSwap.owner();
+    // console.log("DarkPoolDEX owner:", darkPoolOwner);
+    // console.log("AtomicSwap owner:", atomicSwapOwner);
+    // if (darkPoolOwner === deployer.address && atomicSwapOwner === deployer.address) {
+    //   console.log("✅ Ownership verification passed");
+    // } else {
+    //   console.log("❌ Ownership verification failed");
+    // }
 
     // Log contract parameters
     console.log("\n📊 Contract Parameters:");

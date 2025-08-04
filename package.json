@@ -31,6 +31,8 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@dfinity/agent": "^2.4.1",
+    "@dfinity/principal": "^2.4.1",
     "@openzeppelin/contracts": "^4.9.3",
     "@types/node": "^20",
     "@types/react": "^18",

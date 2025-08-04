@@ -432,7 +432,7 @@ export class CostMonitor {
   clearOldData(): void {
     const cutoffTime = Date.now() - (30 * 24 * 60 * 60 * 1000); // 30 days
     
-    for (const [swapId, swapData] of this.swapCosts) {
+    for (const [swapId, swapData] of Array.from(this.swapCosts.entries())) {
       if (swapData.timestamp < cutoffTime) {
         this.swapCosts.delete(swapId);
       }

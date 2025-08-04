@@ -1,0 +1,26 @@
+{
+  "canisters": {
+    "dark_pool_backend": {
+      "type": "rust",
+      "package": "dark_pool_backend",
+      "candid": "candid/dark_pool_backend.did"
+    }
+  },
+  "defaults": {
+    "build": {
+      "packtool": "",
+      "args": ""
+    }
+  },
+  "dfx": "0.15.0",
+  "networks": {
+    "local": {
+      "bind": "127.0.0.1:8000",
+      "type": "ephemeral"
+    },
+    "ic": {
+      "providers": ["https://ic0.app"]
+    }
+  },
+  "version": 1
+} 

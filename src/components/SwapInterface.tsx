@@ -1,5 +1,4 @@
 import React, { useState, useEffect } from 'react';
-import './SwapInterface.css';
 import TokenSelector from './TokenSelector';
 import { web3Service } from '../services/Web3Service';
 import { fetchTokenPrices } from '../utils/priceFetcher';
@@ -23,28 +22,25 @@ const SwapInterface: React.FC<SwapInterfaceProps> = ({
   const [orderStatus, setOrderStatus] = useState<string>('');
   const [pendingCommitments, setPendingCommitments] = useState<string[]>([]);
   const [contractInfo, setContractInfo] = useState<any>(null);
-  const [prices, setPrices] = useState<Record<string, number>>({ ETH: 0, USDC: 0, USDT: 0, DAI: 0 });
+  const [prices, setPrices] = useState<Record<string, number>>({ ETH: 0, QNT: 0, RENDER: 0, USDC: 0 });
   const [contractConnected, setContractConnected] = useState(false);
 
   // Token addresses (real deployed contracts for localhost)
   const tokenAddresses = {
     ETH: '0x0000000000000000000000000000000000000000',
-    USDC: '0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0',
-    USDT: '0x0DCd1Bf9A1b36cE34237eEaFef220932846BCD82',
-    DAI: '0x9A676e781A523b5d0C0e43731313A708CB607508'
+    QNT: '0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0',
+    RENDER: '0xCf7Ed3AccA5a467e9e704C703E8D87F634fB0Fc9',
+    USDC: '0xA51c1fc2f0D1a1b8494Ed1FE312d7C3a78Ed91C0'
   };
 
-  // Fetch prices on load and when tokens change
   useEffect(() => {
     fetchPrices();
   }, [fromToken, toToken]);
 
-  // Auto-calculate toAmount when fromAmount or tokens/prices change
   useEffect(() => {
     if (fromAmount && prices[fromToken] && prices[toToken]) {
       const fromValue = parseFloat(fromAmount);
       if (!isNaN(fromValue)) {
-        // Calculate based on USD value
         const usdValue = fromValue * prices[fromToken];
         const toValue = usdValue / prices[toToken];
         setToAmount(toValue ? toValue.toFixed(6) : '');
@@ -54,46 +50,31 @@ const SwapInterface: React.FC<SwapInterfaceProps> = ({
     }
   }, [fromAmount, fromToken, toToken, prices]);
 
-  // Contract connection and info
   useEffect(() => {
     const initializeContract = async () => {
       if (connectedAccount && contractAddress) {
         try {
           setOrderStatus('Connecting to contract...');
-          console.log('🔍 [SwapInterface] Initializing contract connection');
-          console.log('🔍 [SwapInterface] Connected Account:', connectedAccount);
-          console.log('🔍 [SwapInterface] Contract Address:', contractAddress);
-          // Connect to Web3
           const connected = await web3Service.connect();
           if (connected) {
-            // Connect to contract
             const contractConnected = await web3Service.connectToContract(contractAddress);
-            console.log('🔍 [SwapInterface] connectToContract result:', contractConnected);
             if (contractConnected) {
-              // Get contract info
               const info = await web3Service.getContractInfo();
               setContractInfo(info);
               setContractConnected(true);
               setupEventListeners();
               setOrderStatus('Contract connected successfully');
-              console.log('✅ Contract connected:', contractAddress);
             } else {
               setOrderStatus('Failed to connect to contract');
-              console.error('❌ [SwapInterface] Failed to connect to contract');
             }
           } else {
             setOrderStatus('Failed to connect wallet');
-            console.error('❌ [SwapInterface] Failed to connect wallet');
           }
         } catch (error) {
-          console.error('❌ [SwapInterface] Failed to connect to contract:', error);
           setOrderStatus('Failed to connect to contract');
         }
-      } else {
-        console.log('🔍 [SwapInterface] Missing connectedAccount or contractAddress:', { connectedAccount, contractAddress });
       }
     };
-
     initializeContract();
   }, [connectedAccount, contractAddress]);
 
@@ -109,18 +90,15 @@ const SwapInterface: React.FC<SwapInterfaceProps> = ({
   const loadContractInfo = async () => {
     try {
       if (contractAddress) {
-        console.log('Connecting to contract at', contractAddress);
         await web3Service.connectToContract(contractAddress);
         setContractConnected(true);
         const info = await web3Service.getContractInfo();
         setContractInfo(info);
         setupEventListeners();
-        console.log('Contract connected!');
       }
     } catch (error) {
       setContractConnected(false);
       setOrderStatus('Failed to connect to contract.');
-      console.error('Failed to load contract info:', error);
     }
   };
 
@@ -142,27 +120,16 @@ const SwapInterface: React.FC<SwapInterfaceProps> = ({
   };
 
   const handleSwap = async () => {
-    console.log('🔍 Debug Info:');
-    console.log('Connected Account:', connectedAccount);
-    console.log('Contract Address:', contractAddress);
-    console.log('Contract Connected:', contractConnected);
-    console.log('From Amount:', fromAmount);
-    console.log('From Token:', fromToken);
-    console.log('To Token:', toToken);
-
     if (!connectedAccount) {
       setOrderStatus('Please connect your wallet');
       return;
     }
-    
     if (!contractAddress) {
       setOrderStatus('Contract address not found');
       return;
     }
-    
     if (!contractConnected) {
       setOrderStatus('Contract not connected - trying to reconnect...');
-      // Try to reconnect
       try {
         const connected = await web3Service.connect();
         if (connected) {
@@ -177,20 +144,16 @@ const SwapInterface: React.FC<SwapInterfaceProps> = ({
       }
       return;
     }
-    
     if (!fromAmount) {
       setOrderStatus('Please enter an amount to swap');
       return;
     }
-    
     if (fromToken === toToken) {
       setOrderStatus('Cannot swap the same token');
       return;
     }
-
     setIsLoading(true);
     setOrderStatus('Committing order...');
-    
     try {
       const commitment = await web3Service.commitOrder(
         tokenAddresses[fromToken as keyof typeof tokenAddresses],

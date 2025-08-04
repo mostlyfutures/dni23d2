@@ -261,6 +261,107 @@
   transform: none;
 }
 
+/* Backend Status */
+.backend-status-container {
+  margin-bottom: 2rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.backend-status {
+  color: white;
+}
+
+.backend-status h3 {
+  margin: 0 0 1rem 0;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.status-info {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.status-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 6px;
+}
+
+.status-item .label {
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.status-item .value {
+  font-weight: 600;
+}
+
+.status-item .value.connected {
+  color: #10b981;
+}
+
+.status-item .value.disconnected {
+  color: #ef4444;
+}
+
+.backend-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+}
+
+.test-btn, .health-btn {
+  padding: 0.5rem 1rem;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.test-btn {
+  background: #3b82f6;
+  color: white;
+}
+
+.test-btn:hover:not(:disabled) {
+  background: #2563eb;
+}
+
+.health-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: white;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.health-btn:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.test-btn:disabled, .health-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.error-message {
+  color: #ef4444;
+  font-size: 0.875rem;
+  padding: 0.5rem;
+  background: rgba(239, 68, 68, 0.1);
+  border-radius: 6px;
+  border: 1px solid rgba(239, 68, 68, 0.2);
+}
+
 /* Responsive Design */
 @media (max-width: 768px) {
   .swap-interface {
@@ -329,5 +430,13 @@
   .swap-arrow svg {
     width: 20px;
     height: 20px;
+  }
+  
+  .status-info {
+    grid-template-columns: 1fr;
+  }
+  
+  .backend-actions {
+    flex-direction: column;
   }
 } 

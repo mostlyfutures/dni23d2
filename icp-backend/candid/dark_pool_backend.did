@@ -1,0 +1,118 @@
+type Order = record {
+  id: text;
+  trader: text;
+  tokenIn: text;
+  tokenOut: text;
+  amountIn: text;
+  amountOut: text;
+  isBuy: bool;
+  nonce: nat64;
+  timestamp: nat64;
+  commitment: text;
+  isRevealed: bool;
+  isExecuted: bool;
+  isCancelled: bool;
+};
+
+type EncryptedOrder = record {
+  encryptedData: text;
+  commitment: text;
+  timestamp: nat64;
+  nonce: nat64;
+};
+
+type StateChannel = record {
+  id: text;
+  participants: vec text;
+  balance: text;
+  nonce: nat64;
+  lastUpdate: nat64;
+  isActive: bool;
+  emergencyWithdrawTime: opt nat64;
+};
+
+type TradingPair = record {
+  tokenIn: text;
+  tokenOut: text;
+  minOrderSize: text;
+  maxOrderSize: text;
+  tradingFee: nat32;
+  isActive: bool;
+};
+
+type Balance = record {
+  token: text;
+  amount: text;
+  lastUpdate: nat64;
+};
+
+type Match = record {
+  id: text;
+  buyOrder: text;
+  sellOrder: text;
+  price: text;
+  amount: text;
+  timestamp: nat64;
+  executedAt: nat64;
+};
+
+type OrderBook = record {
+  buys: vec Order;
+  sells: vec Order;
+};
+
+type NetworkStats = record {
+  totalOrders: nat64;
+  totalMatches: nat64;
+  totalVolume: text;
+  activeChannels: nat64;
+  averagePrice: text;
+};
+
+type HealthStatus = record {
+  status: text;
+  timestamp: nat64;
+  epoch: nat64;
+  version: text;
+  network: text;
+};
+
+service : {
+  // Health and status
+  health: () -> (HealthStatus) query;
+  getVersion: () -> (text) query;
+  
+  // Order management
+  commitOrder: (text, nat64, text) -> (text);
+  revealOrder: (EncryptedOrder) -> (bool);
+  getOrderBook: (text) -> (OrderBook) query;
+  getOrder: (text) -> (opt Order) query;
+  cancelOrder: (text, text) -> (bool);
+  
+  // State channels
+  openStateChannel: (text, text, text) -> (StateChannel);
+  updateStateChannel: (text, text, text) -> (bool);
+  getStateChannel: (text) -> (opt StateChannel) query;
+  getUserStateChannels: (text) -> (vec StateChannel) query;
+  emergencyWithdrawal: (text) -> (bool);
+  
+  // Trading pairs and balances
+  getTradingPairs: () -> (vec record { pair: text; config: TradingPair }) query;
+  getUserBalances: (text) -> (vec Balance) query;
+  updateBalance: (text, text, text) -> (bool);
+  
+  // Statistics and monitoring
+  getNetworkStats: () -> (NetworkStats) query;
+  getRecentMatches: (nat64) -> (vec Match) query;
+  getEpochInfo: () -> (record { currentEpoch: nat64; lastProcessed: nat64 }) query;
+  
+  // Privacy layer
+  getEnginePublicKey: () -> (text) query;
+  verifyCommitment: (text, EncryptedOrder) -> (bool);
+  
+  // Administrative functions
+  setTradingPair: (text, TradingPair) -> (bool);
+  pauseTrading: () -> (bool);
+  resumeTrading: () -> (bool);
+  getSystemStatus: () -> (record { isPaused: bool; totalOrders: nat64; activeChannels: nat64 }) query;
+}; 

@@ -1,0 +1,54 @@
+{
+  "metagraph": {
+    "address": "0x359c31f7b8075858f7d1b665e0c5421db0ee3413",
+    "network": "testnet",
+    "deployedAt": "2025-07-12T18:42:20.009Z",
+    "config": {
+      "name": "DarkPoolDEX",
+      "description": "Zero-cost dark pool DEX with privacy-preserving order matching",
+      "version": "1.0.0",
+      "stateSchema": {
+        "stateChannels": "Map<string, StateChannel>",
+        "orders": "Map<string, Order>",
+        "matches": "Map<string, Match>",
+        "commitments": "Map<string, CommitmentData>",
+        "encryptedOrders": "Map<string, EncryptedOrder>",
+        "tradingPairs": "Map<string, TradingPair>",
+        "userBalances": "Map<string, Balance>"
+      },
+      "parameters": {
+        "minOrderSize": "0.001",
+        "maxOrderSize": "100",
+        "commitmentWindow": 300,
+        "revealWindow": 600,
+        "tradingFee": 50,
+        "epochInterval": 1000,
+        "maxStateChannelBalance": "1000",
+        "emergencyWithdrawalDelay": 86400
+      },
+      "stateChannels": {
+        "enabled": true,
+        "maxParticipants": 2,
+        "timeoutPeriod": 3600,
+        "disputePeriod": 300
+      },
+      "privacy": {
+        "encryptionEnabled": true,
+        "commitmentRequired": true,
+        "revealWindow": 600,
+        "keyRotationInterval": 86400
+      }
+    }
+  },
+  "infrastructure": {
+    "oracle": "0xc9275736fc1ab51fb716f6e0d420ff88e7d55779",
+    "bridge": "0xff6e6487d1a780217822084fd27493d2a34e8cd2",
+    "emergency": "0x6dbdb29133ddb9181df068004044e5b8a9bdcf8d",
+    "stateChannel": "0x9b49cb01084b4d5b5b1d5741c817335e9789c728"
+  },
+  "environment": {
+    "nodeUrl": "https://testnet.constellationnetwork.io",
+    "network": "testnet",
+    "version": "1.0.0"
+  }
+}

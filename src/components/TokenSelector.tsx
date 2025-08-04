@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import './TokenSelector.css';
 
 interface Token {
   symbol: string;

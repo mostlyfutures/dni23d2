@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: MIT
+
 pragma solidity ^0.8.19;
 
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
@@ -244,8 +245,10 @@ contract DarkPoolDEX is ReentrancyGuard, Pausable, AccessControl {
         notInEmergencyMode 
         nonReentrant 
     {
-        require(commitment != bytes32(0), "Invalid commitment");
-        require(orders[commitment].trader == address(0), "Commitment already exists");
+        require(!paused(), "CommitOrder: Contract is paused");
+        require(msg.sender != address(0), "CommitOrder: Sender cannot be zero address");
+        require(commitment != bytes32(0), "CommitOrder: Commitment cannot be zero");
+        require(orders[commitment].trader == address(0), "CommitOrder: Commitment already exists");
         
         orders[commitment] = Order({
             trader: msg.sender,

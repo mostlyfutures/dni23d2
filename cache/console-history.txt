@@ -1,1 +1,9 @@
+// returns: "0xe7F1725E7734CE288F8367e1Bb143E90bb3F0512"
+ethers.utils.getAddress("0xe7f1725e7734ce288f8367e1bb143e90bb3f0512")
+await contract.commitOrder("0x4ed708f6d19005c40ef5833595db89f9a6c762baafd00d50b7ec896f6d531bcf");
+await contract.commitOrder("0xde6d78f6619805c0be1f533395d9b9fa6c67b2aa0f005b07ec896f6d531bc1bf");
+await contract.commitOrder("0xYOUR_COMMITMENT_HERE");
+   await contract.commitOrder("0xefcf33ab97beeba4f3bcb41ab252dcc8dbb951614299f741c1e7f597010529f63");
+   const contract = await ethers.getContractAt("DarkPoolDEX", "0xe7f1725E7734ce288f8367e1bb143e90bb3f0512");
+   const [signer] = await ethers.getSigners();
 q

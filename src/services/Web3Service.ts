@@ -103,8 +103,8 @@ export class Web3Service {
         }
         
         // Try to call the owner function
-        const owner = await this.contract.owner();
-        console.log('✅ Contract connected successfully, owner:', owner);
+        const tradingFee = await this.contract.tradingFee();
+        console.log('✅ Contract connected successfully, tradingFee:', tradingFee.toString());
         
         // Check if calculateCommitment function exists
         if (typeof this.contract.calculateCommitment === 'function') {
@@ -168,14 +168,24 @@ export class Web3Service {
       // Use a try-catch specifically for calculateCommitment
       let commitment;
       try {
-        commitment = await this.contract.calculateCommitment(
-          tokenIn,
-          tokenOut,
-          ethers.parseEther(amountIn),
-          ethers.parseEther(amountOut),
-          isBuy,
-          secretNonce
+        commitment = ethers.keccak256(
+          ethers.AbiCoder.defaultAbiCoder().encode(
+            ["address", "address", "uint256", "uint256", "bool", "uint256"],
+            [tokenIn, tokenOut, ethers.parseEther(amountIn), ethers.parseEther(amountOut), isBuy, secretNonce]
+          )
         );
+        // Ensure commitment is a hex string
+        if (typeof commitment !== 'string') {
+          commitment = ethers.hexlify(commitment);
+        }
+        // Debug: Check commitment type and validity
+        console.log('DEBUG: commitment value:', commitment);
+        console.log('DEBUG: typeof commitment:', typeof commitment);
+        console.log('DEBUG: isBytesLike:', ethers.isBytesLike(commitment));
+        console.log('DEBUG: length:', commitment.length);
+        if (!ethers.isBytesLike(commitment) || commitment.length !== 66) {
+          throw new Error('Commitment is not a valid bytes32 hex string');
+        }
         console.log('✅ Commitment calculated:', commitment);
       } catch (calcError) {
         console.error('❌ Failed to calculate commitment:', calcError);

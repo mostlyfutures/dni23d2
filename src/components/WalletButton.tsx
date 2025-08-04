@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import './WalletButton.css';
 
 interface WalletButtonProps {
   onConnect?: (account: string, provider: string) => void;

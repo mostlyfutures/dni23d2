@@ -20,7 +20,7 @@ contract AtomicSwap is ReentrancyGuard, Pausable, AccessControl {
     // ============ CONSTANTS ============
     
     bytes32 public constant OPERATOR_ROLE = keccak256("OPERATOR_ROLE");
-    bytes32 public constant EMERGENCY_ROLE = keccak256("EMERGENCY_ROLE");
+    bytes32 public constant EMERGENCY_ROLE = keccak256("EMERGENCY_ROLE"); //bb
     
     uint256 public constant MAX_FEE_BPS = 1000; // 10% max fee
     uint256 public constant MIN_EXPIRY = 300; // 5 minutes
