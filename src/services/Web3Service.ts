@@ -90,11 +90,9 @@ export class Web3Service {
         fullNetwork: network
       });
       
-      // Check if we're on the correct network (localhost should be 31337)
-      if (network.chainId.toString() !== '31337') {
-        console.error('❌ Wrong network! Expected chainId 31337 (localhost), got:', network.chainId.toString());
-        console.error('❌ Please switch MetaMask to localhost network');
-        return false;
+      // Check for correct network (expect chainId 1337 for localhost)
+      if (Number(network.chainId) !== 1337) {
+        throw new Error(`Wrong network! Expected chainId 1337 (localhost), got: ${network.chainId}`);
       }
         
         if (code === '0x') {
@@ -103,7 +101,7 @@ export class Web3Service {
         }
         
         // Try to call the owner function
-        const tradingFee = await this.contract.tradingFee();
+        const tradingFee = await this.contract.getCurrentFee();
         console.log('✅ Contract connected successfully, tradingFee:', tradingFee.toString());
         
         // Check if calculateCommitment function exists
@@ -163,36 +161,16 @@ export class Web3Service {
 
       const secretNonce = Math.floor(Math.random() * 1000000);
       
-      console.log('🧮 Calculating commitment...');
+      console.log('🧮 Calculating commitment on-chain...');
       
-      // Use a try-catch specifically for calculateCommitment
-      let commitment;
-      try {
-        commitment = ethers.keccak256(
-          ethers.AbiCoder.defaultAbiCoder().encode(
-            ["address", "address", "uint256", "uint256", "bool", "uint256"],
-            [tokenIn, tokenOut, ethers.parseEther(amountIn), ethers.parseEther(amountOut), isBuy, secretNonce]
-          )
-        );
-        // Ensure commitment is a hex string
-        if (typeof commitment !== 'string') {
-          commitment = ethers.hexlify(commitment);
-        }
-        // Debug: Check commitment type and validity
-        console.log('DEBUG: commitment value:', commitment);
-        console.log('DEBUG: typeof commitment:', typeof commitment);
-        console.log('DEBUG: isBytesLike:', ethers.isBytesLike(commitment));
-        console.log('DEBUG: length:', commitment.length);
-        if (!ethers.isBytesLike(commitment) || commitment.length !== 66) {
-          throw new Error('Commitment is not a valid bytes32 hex string');
-        }
-        console.log('✅ Commitment calculated:', commitment);
-      } catch (calcError) {
-        console.error('❌ Failed to calculate commitment:', calcError);
-        // Fix: Handle unknown error type properly
-        const errorMessage = calcError instanceof Error ? calcError.message : 'Unknown error';
-        throw new Error(`Failed to calculate commitment: ${errorMessage}`);
-      }
+      const commitment = await this.calculateCommitment(
+        tokenIn,
+        tokenOut,
+        amountIn,
+        amountOut,
+        isBuy,
+        secretNonce
+      );
 
       console.log('📝 Committing order to blockchain...');
       const tx = await this.contract.commitOrder(commitment);
@@ -303,7 +281,7 @@ export class Web3Service {
       maxOrderSize: ethers.formatEther(await this.contract.maxOrderSize()),
       commitmentWindow: (await this.contract.commitmentWindow()).toString(),
       revealWindow: (await this.contract.revealWindow()).toString(),
-      tradingFee: (await this.contract.tradingFee()).toString(),
+      tradingFee: (await this.contract.getCurrentFee()).toString(),
       paused: await this.contract.paused()
     };
   }

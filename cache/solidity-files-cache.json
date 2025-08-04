@@ -332,8 +332,8 @@
       ]
     },
     "/Users/gdove/Desktop/mostlyfutures.finance/contracts/DarkPoolDEX.sol": {
-      "lastModificationDate": 1752662212198,
-      "contentHash": "fac197b2037f237da52d0452208a887e",
+      "lastModificationDate": 1753001157218,
+      "contentHash": "75bbd38f663bb99846bdb03ce77899ff",
       "sourceName": "contracts/DarkPoolDEX.sol",
       "solcConfig": {
         "version": "0.8.19",
@@ -363,8 +363,7 @@
         "@openzeppelin/contracts/security/Pausable.sol",
         "@openzeppelin/contracts/access/AccessControl.sol",
         "@openzeppelin/contracts/utils/cryptography/ECDSA.sol",
-        "@openzeppelin/contracts/utils/math/SafeMath.sol",
-        "@openzeppelin/contracts/security/ReentrancyGuard.sol"
+        "@openzeppelin/contracts/utils/math/SafeMath.sol"
       ],
       "versionPragmas": [
         "^0.8.19"

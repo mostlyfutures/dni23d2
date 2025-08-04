@@ -7,7 +7,6 @@ import "@openzeppelin/contracts/security/Pausable.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/math/SafeMath.sol";
-import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 
 /**
  * @title DarkPoolDEX
@@ -17,7 +16,7 @@ import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
  */
 contract DarkPoolDEX is ReentrancyGuard, Pausable, AccessControl {
     using ECDSA for bytes32;
-    using SafeMath for uint256;
+    // Removed SafeMath usage since Solidity ^0.8.x has built-in overflow checks
 
     // ============ CONSTANTS ============
     
@@ -30,6 +29,11 @@ contract DarkPoolDEX is ReentrancyGuard, Pausable, AccessControl {
     uint256 public constant MIN_REVEAL_WINDOW = 300; // 5 minutes
     uint256 public constant MAX_REVEAL_WINDOW = 7200; // 2 hours
     uint256 public constant EMERGENCY_TIMELOCK = 86400; // 24 hours
+    
+    // Dynamic fee management constants
+    uint256 public constant MIN_DYNAMIC_FEE = 1; // 0.01% minimum
+    uint256 public constant MAX_DYNAMIC_FEE = 500; // 5% maximum
+    uint256 public constant FEE_ADJUSTMENT_COOLDOWN = 3600; // 1 hour cooldown
 
     // ============ STRUCTS ============
     
@@ -74,6 +78,14 @@ contract DarkPoolDEX is ReentrancyGuard, Pausable, AccessControl {
         uint256 requestTime;
         bool isExecuted;
         string reason;
+    }
+
+    struct FeeConfig {
+        uint256 baseFee;
+        uint256 dynamicFee;
+        uint256 lastAdjustment;
+        uint256 volumeThreshold;
+        uint256 congestionMultiplier;
     }
 
     // ============ EVENTS ============
@@ -152,6 +164,7 @@ contract DarkPoolDEX is ReentrancyGuard, Pausable, AccessControl {
     event FeeCollectorUpdated(address oldCollector, address newCollector);
     event OrderLimitsUpdated(uint256 minSize, uint256 maxSize);
     event WindowsUpdated(uint256 commitmentWindow, uint256 revealWindow);
+    event DynamicFeeUpdated(uint256 oldDynamicFee, uint256 newDynamicFee, string reason);
 
     // ============ STATE VARIABLES ============
     
@@ -168,10 +181,15 @@ contract DarkPoolDEX is ReentrancyGuard, Pausable, AccessControl {
     uint256 public revealWindow;
     
     address public feeCollector;
-    uint256 public tradingFee; // in basis points (1 = 0.01%)
+    FeeConfig public feeConfig;
     
     bool public emergencyMode;
     uint256 public emergencyModeTime;
+    
+    // Volume tracking for dynamic fees
+    uint256 public dailyVolume;
+    uint256 public lastVolumeReset;
+    uint256 public totalTrades;
 
     // ============ MODIFIERS ============
     
@@ -207,6 +225,15 @@ contract DarkPoolDEX is ReentrancyGuard, Pausable, AccessControl {
         _;
     }
 
+    modifier validTimeWindows(uint256 _commitmentWindow, uint256 _revealWindow) {
+        require(_commitmentWindow >= MIN_COMMITMENT_WINDOW && _commitmentWindow <= MAX_COMMITMENT_WINDOW, 
+                "Invalid commitment window");
+        require(_revealWindow >= MIN_REVEAL_WINDOW && _revealWindow <= MAX_REVEAL_WINDOW, 
+                "Invalid reveal window");
+        require(_commitmentWindow < _revealWindow, "Commitment window must be shorter than reveal window");
+        _;
+    }
+
     // ============ CONSTRUCTOR ============
     
     constructor(
@@ -215,22 +242,30 @@ contract DarkPoolDEX is ReentrancyGuard, Pausable, AccessControl {
         uint256 _commitmentWindow,
         uint256 _revealWindow,
         uint256 _tradingFee
-    ) {
+    ) validTimeWindows(_commitmentWindow, _revealWindow) {
         require(_minOrderSize < _maxOrderSize, "Invalid order limits");
-        require(_commitmentWindow >= MIN_COMMITMENT_WINDOW && _commitmentWindow <= MAX_COMMITMENT_WINDOW, "Invalid commitment window");
-        require(_revealWindow >= MIN_REVEAL_WINDOW && _revealWindow <= MAX_REVEAL_WINDOW, "Invalid reveal window");
         require(_tradingFee <= MAX_FEE_BPS, "Fee too high");
 
         minOrderSize = _minOrderSize;
         maxOrderSize = _maxOrderSize;
         commitmentWindow = _commitmentWindow;
         revealWindow = _revealWindow;
-        tradingFee = _tradingFee;
         feeCollector = msg.sender;
+        
+        // Initialize fee configuration
+        feeConfig = FeeConfig({
+            baseFee: _tradingFee,
+            dynamicFee: _tradingFee,
+            lastAdjustment: block.timestamp,
+            volumeThreshold: 1000 ether, // 1000 ETH daily volume threshold
+            congestionMultiplier: 100 // 1x multiplier
+        });
 
         _grantRole(DEFAULT_ADMIN_ROLE, msg.sender);
         _grantRole(OPERATOR_ROLE, msg.sender);
         _grantRole(EMERGENCY_ROLE, msg.sender);
+        
+        lastVolumeReset = block.timestamp;
     }
 
     // ============ CORE FUNCTIONS ============
@@ -290,7 +325,7 @@ contract DarkPoolDEX is ReentrancyGuard, Pausable, AccessControl {
         Order storage order = orders[commitment];
         
         require(!order.isRevealed, "Order already revealed");
-        require(block.timestamp <= order.timestamp.add(revealWindow), "Reveal window expired");
+        require(block.timestamp <= order.timestamp + revealWindow, "Reveal window expired");
         
         // Verify the commitment
         bytes32 expectedCommitment = keccak256(abi.encodePacked(
@@ -340,7 +375,7 @@ contract DarkPoolDEX is ReentrancyGuard, Pausable, AccessControl {
     {
         Order storage order = orders[commitment];
         require(!order.isRevealed, "Cannot cancel revealed order");
-        require(block.timestamp <= order.timestamp.add(commitmentWindow), "Commitment window expired");
+        require(block.timestamp <= order.timestamp + commitmentWindow, "Commitment window expired");
         
         order.isCancelled = true;
         
@@ -373,7 +408,7 @@ contract DarkPoolDEX is ReentrancyGuard, Pausable, AccessControl {
         
         // Calculate match amounts
         uint256 matchAmount = sellOrder.amountIn;
-        uint256 buyAmount = matchAmount.mul(buyOrder.amountOut).div(buyOrder.amountIn);
+        uint256 buyAmount = (matchAmount * buyOrder.amountOut) / buyOrder.amountIn;
         
         // Create match record
         bytes32 matchId = keccak256(abi.encodePacked(
@@ -397,6 +432,9 @@ contract DarkPoolDEX is ReentrancyGuard, Pausable, AccessControl {
         // Mark orders as executed
         order1.isExecuted = true;
         order2.isExecuted = true;
+        
+        // Update volume tracking
+        _updateVolumeTracking(matchAmount);
         
         emit OrderMatched(
             commitment1,
@@ -563,8 +601,9 @@ contract DarkPoolDEX is ReentrancyGuard, Pausable, AccessControl {
     function requestEmergencyWithdraw(string memory reason) external onlyActiveStateChannel(msg.sender) {
         StateChannel storage channel = stateChannels[msg.sender];
         require(channel.emergencyWithdrawTime == 0, "Emergency withdrawal already requested");
+        require(bytes(reason).length > 0, "Reason required");
         
-        channel.emergencyWithdrawTime = block.timestamp.add(EMERGENCY_TIMELOCK);
+        channel.emergencyWithdrawTime = block.timestamp + EMERGENCY_TIMELOCK;
         
         emergencyRequests[msg.sender] = EmergencyRequest({
             requester: msg.sender,
@@ -588,12 +627,14 @@ contract DarkPoolDEX is ReentrancyGuard, Pausable, AccessControl {
         require(request.requester == trader, "No emergency request");
         require(!request.isExecuted, "Already executed");
         require(block.timestamp >= channel.emergencyWithdrawTime, "Timelock not expired");
+        require(channel.emergencyWithdrawTime > 0, "No emergency withdrawal requested");
         
         request.isExecuted = true;
         channel.isActive = false;
         
         uint256 withdrawAmount = channel.balance;
         channel.balance = 0;
+        channel.emergencyWithdrawTime = 0;
         
         payable(trader).transfer(withdrawAmount);
         
@@ -628,22 +669,74 @@ contract DarkPoolDEX is ReentrancyGuard, Pausable, AccessControl {
         StateChannel storage channel = stateChannels[trader];
         
         if (isCredit) {
-            channel.balance = channel.balance.add(amount);
+            channel.balance += amount;
         } else {
             require(channel.balance >= amount, "Insufficient balance");
-            channel.balance = channel.balance.sub(amount);
+            channel.balance -= amount;
         }
         
-        channel.nonce = channel.nonce.add(1);
+        channel.nonce += 1;
         channel.lastUpdate = block.timestamp;
+    }
+
+    function _updateVolumeTracking(uint256 tradeAmount) internal {
+        // Reset daily volume if 24 hours have passed
+        if (block.timestamp >= lastVolumeReset + 1 days) {
+            dailyVolume = 0;
+            lastVolumeReset = block.timestamp;
+        }
+        
+        dailyVolume += tradeAmount;
+        totalTrades += 1;
+        
+        // Check if dynamic fee adjustment is needed
+        _adjustDynamicFee();
+    }
+
+    function _adjustDynamicFee() internal {
+        // Only adjust if cooldown period has passed
+        if (block.timestamp < feeConfig.lastAdjustment + FEE_ADJUSTMENT_COOLDOWN) {
+            return;
+        }
+        
+        uint256 oldDynamicFee = feeConfig.dynamicFee;
+        uint256 newDynamicFee = feeConfig.baseFee;
+        string memory reason = "Base fee";
+        
+        // Adjust based on volume
+        if (dailyVolume > feeConfig.volumeThreshold) {
+            newDynamicFee = (feeConfig.baseFee * 80) / 100; // 20% reduction
+            reason = "High volume discount";
+        }
+        
+        // Adjust based on congestion (gas price)
+        if (tx.gasprice > 50 gwei) {
+            newDynamicFee = (newDynamicFee * feeConfig.congestionMultiplier) / 100;
+            reason = "Network congestion";
+        }
+        
+        // Ensure fee stays within bounds
+        if (newDynamicFee < MIN_DYNAMIC_FEE) {
+            newDynamicFee = MIN_DYNAMIC_FEE;
+            reason = "Minimum fee floor";
+        } else if (newDynamicFee > MAX_DYNAMIC_FEE) {
+            newDynamicFee = MAX_DYNAMIC_FEE;
+            reason = "Maximum fee cap";
+        }
+        
+        if (newDynamicFee != oldDynamicFee) {
+            feeConfig.dynamicFee = newDynamicFee;
+            feeConfig.lastAdjustment = block.timestamp;
+            emit DynamicFeeUpdated(oldDynamicFee, newDynamicFee, reason);
+        }
     }
 
     // ============ ADMIN FUNCTIONS ============
 
     function setTradingFee(uint256 _tradingFee) external onlyRole(DEFAULT_ADMIN_ROLE) {
         require(_tradingFee <= MAX_FEE_BPS, "Fee too high");
-        uint256 oldFee = tradingFee;
-        tradingFee = _tradingFee;
+        uint256 oldFee = feeConfig.baseFee;
+        feeConfig.baseFee = _tradingFee;
         emit FeeUpdated(oldFee, _tradingFee);
     }
 
@@ -661,12 +754,24 @@ contract DarkPoolDEX is ReentrancyGuard, Pausable, AccessControl {
         emit OrderLimitsUpdated(_minOrderSize, _maxOrderSize);
     }
 
-    function setWindows(uint256 _commitmentWindow, uint256 _revealWindow) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        require(_commitmentWindow >= MIN_COMMITMENT_WINDOW && _commitmentWindow <= MAX_COMMITMENT_WINDOW, "Invalid commitment window");
-        require(_revealWindow >= MIN_REVEAL_WINDOW && _revealWindow <= MAX_REVEAL_WINDOW, "Invalid reveal window");
+    function setWindows(uint256 _commitmentWindow, uint256 _revealWindow) 
+        external 
+        onlyRole(DEFAULT_ADMIN_ROLE) 
+        validTimeWindows(_commitmentWindow, _revealWindow) 
+    {
         commitmentWindow = _commitmentWindow;
         revealWindow = _revealWindow;
         emit WindowsUpdated(_commitmentWindow, _revealWindow);
+    }
+
+    function setVolumeThreshold(uint256 _volumeThreshold) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_volumeThreshold > 0, "Invalid threshold");
+        feeConfig.volumeThreshold = _volumeThreshold;
+    }
+
+    function setCongestionMultiplier(uint256 _multiplier) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        require(_multiplier >= 50 && _multiplier <= 200, "Invalid multiplier (50-200)");
+        feeConfig.congestionMultiplier = _multiplier;
     }
 
     function pause() external onlyRole(DEFAULT_ADMIN_ROLE) {
@@ -734,6 +839,18 @@ contract DarkPoolDEX is ReentrancyGuard, Pausable, AccessControl {
         return channel.isActive && 
                channel.emergencyWithdrawTime > 0 && 
                block.timestamp >= channel.emergencyWithdrawTime;
+    }
+
+    function getCurrentFee() external view returns (uint256) {
+        return feeConfig.dynamicFee;
+    }
+
+    function getFeeConfig() external view returns (FeeConfig memory) {
+        return feeConfig;
+    }
+
+    function getVolumeStats() external view returns (uint256, uint256, uint256) {
+        return (dailyVolume, totalTrades, lastVolumeReset);
     }
 
     // ============ EMERGENCY FUNCTIONS ============

@@ -19,8 +19,7 @@ module.exports = {
       chainId: 1337,
     },
     localhost: {
-      url: "http://127.0.0.1:8545",
-      chainId: 1337,
+      chainId: 1337
     },
     "polygon-mumbai": {
       url: process.env.POLYGON_MUMBAI_URL || "https://rpc-mumbai.maticvigil.com",
